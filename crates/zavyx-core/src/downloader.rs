@@ -187,6 +187,8 @@ pub async fn download_segment(
 
     let mut backoff = initial_backoff;
     let mut attempts = 0u32;
+    // Bytes of this segment already on disk, kept across retries.
+    let mut done = written;
     loop {
         attempts += 1;
         let mut req = client.get(&url);
@@ -229,7 +231,7 @@ pub async fn download_segment(
         }
 
         let mut stream = resp.bytes_stream();
-        let mut local_written = written;
+        let mut local_written = done;
         loop {
             tokio::select! {
                 biased;
@@ -252,16 +254,18 @@ pub async fn download_segment(
                             progress(segment_index_from_lock(&segment), local_written);
                         }
                         Some(Err(e)) => {
-                            writer.close().await?;
                             if attempts <= max_retries {
+                                // Keep the part file open: the retry appends to it.
                                 tracing::warn!(?e, "stream chunk error, retrying segment");
                                 tokio::time::sleep(backoff).await;
                                 backoff *= 2;
                                 // Continue loop will re-request from `local_written` since written was updated.
                                 // Reset range_start to resume from where we are.
+                                done = local_written;
                                 range_start = start + local_written;
                                 break;
                             }
+                            writer.close().await?;
                             return Err(DownloadError::Http(e));
                         }
                         None => {

@@ -134,6 +134,8 @@ impl Queue {
         if let Some(job) = inner.jobs.get_mut(&id) {
             job.state = DownloadState::Paused;
         }
+        // A queued job that hasn't started yet must not be dispatched later.
+        inner.pending.retain(|p| *p != id);
     }
 
     pub fn cancel(&self, id: DownloadId) {
@@ -339,6 +341,10 @@ async fn run_download_inner(
                 let Some(j) = inner.jobs.get_mut(&id) else { return };
                 match ev {
                     YtdlpEvent::Progress { written, total } => {
+                        // Late progress lines after a pause must not flip it back.
+                        if j.state != DownloadState::Preparing && !j.state.is_active() {
+                            return;
+                        }
                         j.state = DownloadState::Downloading;
                         j.written = written;
                         if total.is_some() {
@@ -384,7 +390,10 @@ async fn run_download_inner(
         let mut inner = inner.lock();
         if let Some(j) = inner.jobs.get_mut(&id) {
             j.total_size = total;
-            j.state = DownloadState::Downloading;
+            // A pause during the probe already cancelled us; keep it paused.
+            if j.state == DownloadState::Preparing {
+                j.state = DownloadState::Downloading;
+            }
         }
     }
 
@@ -616,7 +625,7 @@ async fn run_ytdlp(
     let status = tokio::select! {
         status = child.wait() => status.map_err(|e| DownloadError::Other(format!("yt-dlp wait: {}", e)))?,
         _ = cancel.cancelled() => {
-            let _ = child.kill().await;
+            kill_tree(&mut child).await;
             return Err(DownloadError::Cancelled);
         }
     };
@@ -628,6 +637,24 @@ async fn run_ytdlp(
         return Err(DownloadError::Other(msg));
     }
     Ok(())
+}
+
+/// Stop a helper process and everything it started. yt-dlp.exe is a launcher
+/// that runs the real downloader as a child process, and yt-dlp in turn starts
+/// ffmpeg; killing only the top process leaves the download running.
+async fn kill_tree(child: &mut tokio::process::Child) {
+    #[cfg(windows)]
+    if let Some(pid) = child.id() {
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        let _ = tokio::process::Command::new("taskkill")
+            .args(["/T", "/F", "/PID", &pid.to_string()])
+            .creation_flags(CREATE_NO_WINDOW)
+            .stdout(std::process::Stdio::null())
+            .stderr(std::process::Stdio::null())
+            .status()
+            .await;
+    }
+    let _ = child.kill().await;
 }
 
 /// Use ffmpeg to download an HLS or DASH stream by treating the manifest URL as input.
@@ -655,7 +682,7 @@ async fn run_ffmpeg_stream(
     let status = tokio::select! {
         biased;
         _ = cancel.cancelled() => {
-            let _ = child.start_kill();
+            kill_tree(&mut child).await;
             return Err(DownloadError::Cancelled);
         }
         r = child.wait() => r.map_err(|e| DownloadError::Other(format!("ffmpeg wait: {}", e)))?,
