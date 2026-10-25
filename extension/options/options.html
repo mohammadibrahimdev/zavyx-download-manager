@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Zavyx — Options</title>
+  <link rel="stylesheet" href="./options.css" />
+</head>
+<body>
+  <main>
+    <h1>Zavyx Options</h1>
+
+    <section>
+      <h2>Native Messaging Host</h2>
+      <p class="hint">
+        The host name registered in the Windows registry / Firefox manifest.
+        Default: <code>io.github.mohammadibrahimdev.zavyx</code>. Only change if you customized the installer.
+      </p>
+      <label>
+        Host name
+        <input type="text" id="host-name" />
+      </label>
+      <p class="hint">
+        Status: <span id="host-status">checking…</span>
+      </p>
+    </section>
+
+    <section>
+      <h2>Engine configuration (mirrors host app config)</h2>
+      <p class="hint">
+        These settings are sent to the host app and persisted on disk.
+        Changes apply to all new downloads.
+      </p>
+      <label>
+        Download directory
+        <input type="text" id="download-dir" placeholder="C:\Users\you\Downloads" />
+      </label>
+      <label>
+        Max concurrent downloads
+        <input type="number" id="max-concurrent" min="1" max="32" />
+      </label>
+      <label>
+        Max segments per download
+        <input type="number" id="max-segments" min="1" max="64" />
+      </label>
+      <p>
+        <button id="save-config" class="primary">Save</button>
+        <button id="reload-config">Reload from host</button>
+      </p>
+    </section>
+
+    <section>
+      <h2>Video overlay button</h2>
+      <label>
+        <input type="checkbox" id="overlay-enabled" />
+        Inject "Download this video" button on &lt;video&gt; elements
+      </label>
+      <label>
+        <input type="checkbox" id="overlay-youtube" />
+        Also inject on YouTube watch pages (the YouTube player isn't a plain &lt;video&gt;)
+      </label>
+    </section>
+
+    <section>
+      <h2>Context menu</h2>
+      <label>
+        <input type="checkbox" id="ctx-link" />
+        "Download with Zavyx" on links / images / videos
+      </label>
+      <label>
+        <input type="checkbox" id="ctx-page" />
+        "Download page with Zavyx" on page context
+      </label>
+      <label>
+        <input type="checkbox" id="ctx-all" />
+        "Download all media on this page"
+      </label>
+    </section>
+  </main>
+
+  <script src="./options.js"></script>
+</body>
+</html>

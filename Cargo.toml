@@ -1,0 +1,49 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/zavyx-core",
+    "crates/zavyx-hls",
+    "crates/zavyx-ytdlp",
+    "crates/zavyx-ffmpeg",
+    "crates/zavyx-native-messaging",
+    "crates/zavyx-cli",
+    "crates/zavyx-gui",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+authors = ["Mohammad Ibrahim <https://github.com/mohammadibrahimdev>"]
+license = "MIT"
+repository = "https://github.com/mohammadibrahimdev/zavyx"
+description = "Zavyx Download Manager: fast, free, open-source download manager for Windows"
+
+[workspace.dependencies]
+tokio = { version = "1.41", features = ["full"] }
+reqwest = { version = "0.12", features = ["stream", "gzip", "brotli", "deflate", "rustls-tls"], default-features = false }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1"
+thiserror = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4.5", features = ["derive"] }
+bytes = "1"
+url = "2"
+percent-encoding = "2"
+regex = "1"
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
+tokio-util = { version = "0.7", features = ["io"] }
+futures-util = "0.3"
+async-trait = "0.1"
+parking_lot = "0.12"
+directories = "5"
+toml = "0.8"
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1
+strip = true
+panic = "abort"

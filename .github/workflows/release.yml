@@ -1,0 +1,46 @@
+# Builds the installer, portable ZIP and extension ZIP, and publishes them as a
+# GitHub Release whenever a version tag (v1.2.3) is pushed.
+# The easiest way to trigger it: scripts\release.ps1 1.2.3
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Install Inno Setup
+        run: choco install innosetup -y --no-progress
+
+      - name: Build release files
+        shell: pwsh
+        run: ./scripts/package.ps1
+
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: Zavyx ${{ github.ref_name }}
+          generate_release_notes: true
+          body: |
+            ## Download
+            - **Zavyx-Setup-*.exe** — recommended. Installs Zavyx and connects your browsers automatically.
+            - **Zavyx-*-portable.zip** — no install. Unzip, run `Zavyx.exe`, then `Connect browsers.bat` once.
+            - **Zavyx-extension-*.zip** — the browser extension (see the README for how to add it).
+          files: |
+            dist/Zavyx-Setup-*.exe
+            dist/Zavyx-*-portable.zip
+            dist/Zavyx-extension-*.zip

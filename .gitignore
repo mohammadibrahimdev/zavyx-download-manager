@@ -1,0 +1,20 @@
+# Build output
+/target/
+/dist/
+
+# Bundled third-party tools are downloaded at package time, not committed
+/bin/
+
+# Private signing key for the browser extension — never commit
+/keys/
+
+# Local test downloads
+/test.bin
+/batch_test/
+
+# Editor / OS clutter
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+.DS_Store

@@ -1,0 +1,64 @@
+{
+  "manifest_version": 3,
+  "name": "Zavyx",
+  "version": "0.1.0",
+  "description": "Send downloads and videos from your browser to Zavyx Download Manager.",
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAwlIFdWP7t6OGVun0ci8F6NCVqZyDfHC0G9xNDsyiXRHx63pMPMIFU7FjP2bOGDLxwgrBqT7J/bwR3iWhIWAOSBjMOe7hHDpzAy11sFjJUR7FvM3vDOJaLTZMMRqaIcFOz2IA2jpvNKQQBabtUEGfS2qZWQ0w48N7lpKGyt3t/b1PD4faRwGD9or3qCwUJhbYfEQAwHg2+G9v+X3sKU3Q/MukBDM9FCeXt4vDkZ7wC+xRr6pggGMWKuKJ7SImjesiZ7dOwCdpheuftW/dsRLFzGliLWycqN6iQ0uZb+S5Y1aww5tXkxEUP3ysrF/WPig68hyWQ7Fgtozl5PUB6KO5xwIDAQAB",
+  "background": {
+    "service_worker": "src/sw.js",
+    "scripts": ["src/browser-shim.js", "src/background.js"]
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["src/browser-shim.js", "src/content.js"],
+      "css": ["src/content.css"],
+      "run_at": "document_idle",
+      "all_frames": true,
+      "match_about_blank": true
+    }
+  ],
+  "options_ui": {
+    "page": "options/options.html",
+    "open_in_tab": true
+  },
+  "permissions": [
+    "activeTab",
+    "contextMenus",
+    "nativeMessaging",
+    "storage",
+    "webRequest",
+    "downloads",
+    "scripting"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": ["assets/download-button.svg", "assets/icon-overlay.css"],
+      "matches": ["<all_urls>"]
+    }
+  ],
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zavyx@mohammadibrahimdev.github.io",
+      "strict_min_version": "109.0"
+    }
+  }
+}

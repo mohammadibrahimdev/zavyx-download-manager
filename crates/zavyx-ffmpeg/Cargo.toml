@@ -1,0 +1,12 @@
+[package]
+name = "zavyx-ffmpeg"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "ffmpeg subprocess wrapper for Zavyx (HLS/DASH download + post-convert)"
+
+[dependencies]
+tokio = { workspace = true }
+anyhow = { workspace = true }
+thiserror = { workspace = true }
+tracing = { workspace = true }

@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Zavyx</title>
+  <link rel="stylesheet" href="./popup.css" />
+</head>
+<body>
+  <header class="header">
+    <div class="brand">
+      <span class="logo">Zavyx</span>
+      <span class="version" id="version"></span>
+    </div>
+    <div class="status" id="host-status">
+      <span class="dot"></span><span class="text">checking…</span>
+    </div>
+  </header>
+
+  <section class="card">
+    <h2>Send URL to host</h2>
+    <div class="row">
+      <input type="text" id="manual-url" placeholder="https://example.com/file.zip" />
+    </div>
+    <div class="actions">
+      <button id="send-direct" class="primary">Download</button>
+      <button id="send-video">As Video (yt-dlp)</button>
+      <button id="send-hls">As HLS (ffmpeg)</button>
+    </div>
+  </section>
+
+  <section class="card" id="discovered-card" hidden>
+    <h2>Media on this tab <span class="count" id="media-count">0</span></h2>
+    <ul id="media-list" class="media-list"></ul>
+  </section>
+
+  <section class="card">
+    <h2>Recent downloads</h2>
+    <ul id="download-list" class="download-list"></ul>
+    <p class="empty" id="downloads-empty">No downloads yet.</p>
+  </section>
+
+  <footer class="footer">
+    <a href="#" id="open-options">Options</a>
+    <a href="#" id="open-host-app">Open Zavyx app</a>
+  </footer>
+
+  <script src="./popup.js"></script>
+</body>
+</html>

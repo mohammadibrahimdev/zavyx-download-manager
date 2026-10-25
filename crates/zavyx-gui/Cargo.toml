@@ -1,0 +1,29 @@
+[package]
+name = "zavyx-gui"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Zavyx Download Manager desktop app (egui)"
+build = "build.rs"
+
+[[bin]]
+name = "Zavyx"
+path = "src/main.rs"
+
+[dependencies]
+zavyx-core = { path = "../zavyx-core" }
+zavyx-native-messaging = { path = "../zavyx-native-messaging" }
+tokio = { workspace = true }
+anyhow = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+serde_json = { workspace = true }
+eframe = "0.29"
+egui = "0.29"
+egui_extras = "0.29"
+chrono = { workspace = true }
+rfd = "0.15"
+arboard = "3"
+
+[build-dependencies]
+winresource = "0.1"
