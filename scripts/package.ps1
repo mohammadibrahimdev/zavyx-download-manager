@@ -1,8 +1,8 @@
-# Build every Zavyx release file into .\dist\
+# Build every Zavyx DM release file into .\dist\
 #
-#   Zavyx-Setup-<ver>.exe        installer for normal users (needs Inno Setup's iscc)
-#   Zavyx-<ver>-portable.zip     no-install version
-#   Zavyx-extension-<ver>.zip    browser extension (for Chrome Web Store / Edge Add-ons)
+#   ZavyxDM-Setup-<ver>.exe        installer for normal users (needs Inno Setup's iscc)
+#   Zavyx DM-<ver>-portable.zip     no-install version
+#   ZavyxDM-extension-<ver>.zip    browser extension (for Chrome Web Store / Edge Add-ons)
 #
 # Usage (from the repo root):
 #   powershell -ExecutionPolicy Bypass -File scripts\package.ps1
@@ -22,7 +22,7 @@ $root = Split-Path -Parent $PSScriptRoot
 Set-Location $root
 
 $version = (Select-String -Path Cargo.toml -Pattern '^version = "(.+)"' | Select-Object -First 1).Matches[0].Groups[1].Value
-Write-Host "=== Packaging Zavyx $version ==="
+Write-Host "=== Packaging Zavyx DM $version ==="
 
 cargo build --release
 if ($LASTEXITCODE -ne 0) { throw "cargo build failed" }
@@ -33,7 +33,7 @@ if (Test-Path $staging) { Remove-Item -Recurse -Force $staging }
 New-Item -ItemType Directory -Force -Path $staging | Out-Null
 
 # App binaries.
-foreach ($exe in "Zavyx.exe", "zavyx-host.exe", "zavyx-cli.exe") {
+foreach ($exe in "ZavyxDM.exe", "zavyx-dm-host.exe", "zavyx-dm-cli.exe") {
     Copy-Item "target\release\$exe" $staging
 }
 
@@ -65,14 +65,14 @@ Copy-Item LICENSE, THIRD-PARTY-NOTICES.md $staging
 Copy-Item installer\register-nm-host.ps1, installer\unregister-nm-host.bat $staging
 Set-Content -Encoding ASCII "$staging\Connect browsers.bat" @'
 @echo off
-REM Connects Chrome, Edge, Brave, Vivaldi, Opera and Firefox to this copy of Zavyx.
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0register-nm-host.ps1" -NmHostPath "%~dp0zavyx-host.exe" -ManifestDir "%~dp0."
+REM Connects Chrome, Edge, Brave, Vivaldi, Opera and Firefox to this copy of Zavyx DM.
+powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0register-nm-host.ps1" -NmHostPath "%~dp0zavyx-dm-host.exe" -ManifestDir "%~dp0."
 pause
 '@
 
 # Portable ZIP and extension ZIP.
-$portable = Join-Path $dist "Zavyx-$version-portable.zip"
-$extZip = Join-Path $dist "Zavyx-extension-$version.zip"
+$portable = Join-Path $dist "ZavyxDM-$version-portable.zip"
+$extZip = Join-Path $dist "ZavyxDM-extension-$version.zip"
 Remove-Item $portable, $extZip -ErrorAction SilentlyContinue
 Compress-Archive -Path "$staging\*" -DestinationPath $portable
 Compress-Archive -Path "extension\*" -DestinationPath $extZip
@@ -88,9 +88,9 @@ if (-not $NoInstaller) {
             Where-Object { Test-Path $_ } | Select-Object -First 1
     }
     if ($iscc) {
-        & $iscc "/DAppVersion=$version" installer\zavyx.iss
+        & $iscc "/DAppVersion=$version" installer\zavyx-dm.iss
         if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed" }
-        Write-Host "Wrote dist\Zavyx-Setup-$version.exe"
+        Write-Host "Wrote dist\ZavyxDM-Setup-$version.exe"
     } else {
         Write-Warning "Inno Setup (iscc) not found; skipped the installer. GitHub Actions builds it on release."
     }

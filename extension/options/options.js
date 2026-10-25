@@ -1,6 +1,6 @@
 // Options page logic. Persists to chrome.storage.local and sends config to host.
 
-const HOST_DEFAULT = "io.github.mohammadibrahimdev.zavyx";
+const HOST_DEFAULT = "io.github.mohammadibrahimdev.zavyx_dm";
 
 const el = (id) => document.getElementById(id);
 const hostNameEl = el("host-name");

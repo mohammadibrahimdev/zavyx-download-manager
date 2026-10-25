@@ -3,13 +3,13 @@
 // Responsibilities:
 //   1. Media sniffer — watch webRequest events for video/audio stream URLs
 //      (m3u8, mp4, webm, mpd, etc.) and notify the host / popup.
-//   2. Context menu — "Download with Zavyx" on links, videos, audio, pages.
-//   3. Native Messaging bridge — exchange JSON messages with the Zavyx host app.
+//   2. Context menu — "Download with Zavyx DM" on links, videos, audio, pages.
+//   3. Native Messaging bridge — exchange JSON messages with the Zavyx DM host app.
 //   4. Per-tab media cache — accumulate URLs discovered in each tab so the
 //      popup can list them.
 
 // --- Native Messaging port to the host app ---
-const HOST_NAME = "io.github.mohammadibrahimdev.zavyx";
+const HOST_NAME = "io.github.mohammadibrahimdev.zavyx_dm";
 let port = null;
 let portConnecting = false;
 let pendingMessages = []; // Messages to flush once port opens.
@@ -22,12 +22,12 @@ function connectNative() {
     port = chrome.runtime.connectNative(HOST_NAME);
     port.onMessage.addListener(onNativeMessage);
     port.onDisconnect.addListener(() => {
-      const reason = chrome.runtime.lastError?.message || "Zavyx is not installed or could not start";
-      console.warn("[Zavyx] Native port disconnected:", reason);
+      const reason = chrome.runtime.lastError?.message || "Zavyx DM is not installed or could not start";
+      console.warn("[Zavyx DM] Native port disconnected:", reason);
       port = null;
       portConnecting = false;
       failPending(reason);
-      // Reconnect after a short delay so the link comes back once Zavyx is installed/fixed.
+      // Reconnect after a short delay so the link comes back once Zavyx DM is installed/fixed.
       setTimeout(connectNative, 5000);
     });
     // Flush pending messages.
@@ -36,7 +36,7 @@ function connectNative() {
     }
     pendingMessages = [];
   } catch (e) {
-    console.error("[Zavyx] Failed to connect to native host:", e);
+    console.error("[Zavyx DM] Failed to connect to native host:", e);
     port = null;
     portConnecting = false;
     failPending(String(e?.message || e));
@@ -196,22 +196,22 @@ chrome.tabs.onRemoved.addListener((tabId) => {
 // --- Context menu ---
 chrome.runtime.onInstalled.addListener(() => {
   chrome.contextMenus.create({
-    id: "zavyx-download-link",
-    title: "Download with Zavyx",
+    id: "zavyx-dm-download-link",
+    title: "Download with Zavyx DM",
     contexts: ["link", "image", "video", "audio"],
   });
   chrome.contextMenus.create({
-    id: "zavyx-download-page",
-    title: "Download page with Zavyx",
+    id: "zavyx-dm-download-page",
+    title: "Download page with Zavyx DM",
     contexts: ["page"],
   });
   chrome.contextMenus.create({
-    id: "zavyx-download-selection",
-    title: "Download selected URLs with Zavyx",
+    id: "zavyx-dm-download-selection",
+    title: "Download selected URLs with Zavyx DM",
     contexts: ["selection"],
   });
   chrome.contextMenus.create({
-    id: "zavyx-download-all-videos",
+    id: "zavyx-dm-download-all-videos",
     title: "Download all media on this page",
     contexts: ["page", "video"],
   });
@@ -221,15 +221,15 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   let url = null;
   let kind = null;
   switch (info.menuItemId) {
-    case "zavyx-download-link":
+    case "zavyx-dm-download-link":
       url = info.linkUrl || info.srcUrl || info.pageUrl;
       kind = "direct";
       break;
-    case "zavyx-download-page":
+    case "zavyx-dm-download-page":
       url = info.pageUrl;
       kind = "page";
       break;
-    case "zavyx-download-selection":
+    case "zavyx-dm-download-selection":
       // Selection may contain multiple URLs.
       if (info.selectionText) {
         const urls = extractUrls(info.selectionText);
@@ -239,7 +239,7 @@ chrome.contextMenus.onClicked.addListener(async (info, tab) => {
         return;
       }
       break;
-    case "zavyx-download-all-videos":
+    case "zavyx-dm-download-all-videos":
       const items = getTabMedia(tab.id);
       for (const item of items) {
         await sendToHost({

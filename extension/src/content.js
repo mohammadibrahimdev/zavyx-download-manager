@@ -3,7 +3,7 @@
 // worker so the popup can list them.
 //
 //   - Hovering a video fades the button in at its top-right corner.
-//   - "Download" sends the video to Zavyx in the best quality; the ▾ arrow
+//   - "Download" sends the video to Zavyx DM in the best quality; the ▾ arrow
 //     opens a menu with 1080p / 720p / 480p / audio only.
 //   - blob:/MediaSource players (YouTube etc.) hide the real stream, so the page
 //     URL is sent instead and yt-dlp resolves it.
@@ -11,8 +11,8 @@
 (function () {
   "use strict";
 
-  if (window.__zavyx_injected) return;
-  window.__zavyx_injected = true;
+  if (window.__zavyx_dm_injected) return;
+  window.__zavyx_dm_injected = true;
 
   const QUALITIES = [
     ["Best quality", ""],
@@ -35,22 +35,22 @@
 
   function send(video, overlay, format) {
     const { url, kind } = videoSource(video);
-    const label = overlay.querySelector(".zavyx-label");
-    overlay.classList.remove("zavyx-menu-open");
+    const label = overlay.querySelector(".zavyx-dm-label");
+    overlay.classList.remove("zavyx-dm-menu-open");
     label.textContent = "Sending…";
     chrome.runtime
       .sendMessage({ type: "content_video_click", url, kind, format: format || undefined })
       .then((r) => {
-        overlay.classList.add(r?.ok ? "zavyx-ok" : "zavyx-fail");
-        label.textContent = r?.ok ? "Added to Zavyx" : "Zavyx not connected";
+        overlay.classList.add(r?.ok ? "zavyx-dm-ok" : "zavyx-dm-fail");
+        label.textContent = r?.ok ? "Added to Zavyx DM" : "Zavyx DM not connected";
       })
       .catch(() => {
-        overlay.classList.add("zavyx-fail");
-        label.textContent = "Zavyx not connected";
+        overlay.classList.add("zavyx-dm-fail");
+        label.textContent = "Zavyx DM not connected";
       })
       .finally(() => {
         setTimeout(() => {
-          overlay.classList.remove("zavyx-ok", "zavyx-fail");
+          overlay.classList.remove("zavyx-dm-ok", "zavyx-dm-fail");
           label.textContent = "Download";
         }, 2200);
       });
@@ -59,15 +59,15 @@
   function ensureOverlay(video) {
     if (overlays.has(video)) return overlays.get(video);
     const overlay = document.createElement("div");
-    overlay.className = "zavyx-video-overlay";
+    overlay.className = "zavyx-dm-video-overlay";
     overlay.innerHTML = `
-      <div class="zavyx-btn-group">
-        <button type="button" class="zavyx-main" title="Download with Zavyx">
-          <span class="zavyx-z">Z</span><span class="zavyx-label">Download</span>
+      <div class="zavyx-dm-btn-group">
+        <button type="button" class="zavyx-dm-main" title="Download with Zavyx DM">
+          <span class="zavyx-dm-z">Z</span><span class="zavyx-dm-label">Download</span>
         </button>
-        <button type="button" class="zavyx-more" title="Choose quality" aria-haspopup="true">▾</button>
+        <button type="button" class="zavyx-dm-more" title="Choose quality" aria-haspopup="true">▾</button>
       </div>
-      <div class="zavyx-menu" role="menu">
+      <div class="zavyx-dm-menu" role="menu">
         ${QUALITIES.map(([name, fmt]) => `<button type="button" role="menuitem" data-format="${fmt}">${name}</button>`).join("")}
       </div>`;
     const stop = (e) => {
@@ -75,15 +75,15 @@
       e.stopPropagation();
     };
     overlay.addEventListener("mousedown", (e) => e.stopPropagation());
-    overlay.querySelector(".zavyx-main").addEventListener("click", (e) => {
+    overlay.querySelector(".zavyx-dm-main").addEventListener("click", (e) => {
       stop(e);
       send(video, overlay, "");
     });
-    overlay.querySelector(".zavyx-more").addEventListener("click", (e) => {
+    overlay.querySelector(".zavyx-dm-more").addEventListener("click", (e) => {
       stop(e);
-      overlay.classList.toggle("zavyx-menu-open");
+      overlay.classList.toggle("zavyx-dm-menu-open");
     });
-    overlay.querySelectorAll(".zavyx-menu button").forEach((b) =>
+    overlay.querySelectorAll(".zavyx-dm-menu button").forEach((b) =>
       b.addEventListener("click", (e) => {
         stop(e);
         send(video, overlay, b.dataset.format);
@@ -99,7 +99,7 @@
   function positionOverlay(video, overlay) {
     const rect = video.getBoundingClientRect();
     if (rect.width < 160 || rect.height < 90) {
-      overlay.classList.remove("zavyx-visible");
+      overlay.classList.remove("zavyx-dm-visible");
       return false;
     }
     const width = overlay.offsetWidth || 150;
@@ -111,15 +111,15 @@
   function showOverlay(video) {
     clearTimeout(hideTimer);
     const overlay = ensureOverlay(video);
-    overlays.forEach((o, v) => v !== video && o.classList.remove("zavyx-visible", "zavyx-menu-open"));
-    if (positionOverlay(video, overlay)) overlay.classList.add("zavyx-visible");
+    overlays.forEach((o, v) => v !== video && o.classList.remove("zavyx-dm-visible", "zavyx-dm-menu-open"));
+    if (positionOverlay(video, overlay)) overlay.classList.add("zavyx-dm-visible");
   }
 
   function scheduleHide(video) {
     clearTimeout(hideTimer);
     hideTimer = setTimeout(() => {
       const overlay = overlays.get(video);
-      if (overlay && !overlay.matches(":hover")) overlay.classList.remove("zavyx-visible", "zavyx-menu-open");
+      if (overlay && !overlay.matches(":hover")) overlay.classList.remove("zavyx-dm-visible", "zavyx-dm-menu-open");
     }, 1200);
   }
 
@@ -154,7 +154,7 @@
 
   const reposition = () =>
     overlays.forEach((overlay, video) => {
-      if (overlay.classList.contains("zavyx-visible")) positionOverlay(video, overlay);
+      if (overlay.classList.contains("zavyx-dm-visible")) positionOverlay(video, overlay);
     });
   window.addEventListener("resize", reposition);
   let scrollRaf = null;

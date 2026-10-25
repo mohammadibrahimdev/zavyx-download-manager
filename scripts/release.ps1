@@ -1,4 +1,4 @@
-# Publish a new Zavyx version in one step.
+# Publish a new Zavyx DM version in one step.
 #
 #   powershell -ExecutionPolicy Bypass -File scripts\release.ps1 0.2.0
 #
@@ -33,4 +33,4 @@ git tag "v$Version"
 git push origin HEAD "v$Version"
 Write-Host ""
 Write-Host "Pushed v$Version. The release will appear in a few minutes at:"
-Write-Host "https://github.com/mohammadibrahimdev/zavyx/releases"
+Write-Host "https://github.com/mohammadibrahimdev/zavyx-download-manager/releases"

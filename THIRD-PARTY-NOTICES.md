@@ -1,6 +1,6 @@
-# Third-party software bundled with Zavyx
+# Third-party software bundled with Zavyx DM
 
-The Zavyx installer and portable ZIP include these separate programs. Zavyx runs
+The Zavyx DM installer and portable ZIP include these separate programs. Zavyx DM runs
 them as external tools; they keep their own licences.
 
 ## yt-dlp
@@ -14,5 +14,5 @@ them as external tools; they keep their own licences.
 - Licence: GNU GPL v3 — https://www.gnu.org/licenses/gpl-3.0.html
 - Source code: https://ffmpeg.org/download.html and https://github.com/GyanD/codexffmpeg
 
-Zavyx itself is released under the MIT licence (see `LICENSE`). Rust crate
+Zavyx DM itself is released under the MIT licence (see `LICENSE`). Rust crate
 dependencies are listed in `Cargo.lock` with their own licences.

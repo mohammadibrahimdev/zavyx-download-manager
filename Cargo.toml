@@ -1,13 +1,13 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/zavyx-core",
-    "crates/zavyx-hls",
-    "crates/zavyx-ytdlp",
-    "crates/zavyx-ffmpeg",
-    "crates/zavyx-native-messaging",
-    "crates/zavyx-cli",
-    "crates/zavyx-gui",
+    "crates/zavyx-dm-core",
+    "crates/zavyx-dm-hls",
+    "crates/zavyx-dm-ytdlp",
+    "crates/zavyx-dm-ffmpeg",
+    "crates/zavyx-dm-native-messaging",
+    "crates/zavyx-dm-cli",
+    "crates/zavyx-dm-gui",
 ]
 
 [workspace.package]
@@ -15,7 +15,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["Mohammad Ibrahim <https://github.com/mohammadibrahimdev>"]
 license = "MIT"
-repository = "https://github.com/mohammadibrahimdev/zavyx"
+repository = "https://github.com/mohammadibrahimdev/zavyx-download-manager"
 description = "Zavyx Download Manager: fast, free, open-source download manager for Windows"
 
 [workspace.dependencies]

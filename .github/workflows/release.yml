@@ -33,14 +33,14 @@ jobs:
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          name: Zavyx ${{ github.ref_name }}
+          name: Zavyx DM ${{ github.ref_name }}
           generate_release_notes: true
           body: |
             ## Download
-            - **Zavyx-Setup-*.exe** — recommended. Installs Zavyx and connects your browsers automatically.
-            - **Zavyx-*-portable.zip** — no install. Unzip, run `Zavyx.exe`, then `Connect browsers.bat` once.
-            - **Zavyx-extension-*.zip** — the browser extension (see the README for how to add it).
+            - **ZavyxDM-Setup-*.exe** — recommended. Installs Zavyx DM and connects your browsers automatically.
+            - **ZavyxDM-*-portable.zip** — no install. Unzip, run `ZavyxDM.exe`, then `Connect browsers.bat` once.
+            - **ZavyxDM-extension-*.zip** — the browser extension (see the README for how to add it).
           files: |
-            dist/Zavyx-Setup-*.exe
-            dist/Zavyx-*-portable.zip
-            dist/Zavyx-extension-*.zip
+            dist/ZavyxDM-Setup-*.exe
+            dist/ZavyxDM-*-portable.zip
+            dist/ZavyxDM-extension-*.zip

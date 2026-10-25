@@ -1,6 +1,6 @@
 // Popup: connection status, "download this video" for video pages, a single
 // link box that routes to the right downloader, media found on the page, and
-// recent downloads from the Zavyx app.
+// recent downloads from the Zavyx DM app.
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $("host-status");
@@ -43,7 +43,7 @@ async function withButton(btn, action) {
   }
   btn.disabled = false;
   btn.classList.add(r?.ok ? "done" : "failed");
-  btn.textContent = r?.ok ? "✓ Sent to Zavyx" : "✗ Failed";
+  btn.textContent = r?.ok ? "✓ Sent to Zavyx DM" : "✗ Failed";
   if (!r?.ok) btn.title = r?.error || "";
   setTimeout(() => {
     btn.classList.remove("done", "failed");
@@ -180,7 +180,7 @@ async function renderDownloads() {
   const list = $("download-list");
   list.replaceChildren();
   $("downloads-empty").hidden = items.length > 0;
-  $("downloads-empty").textContent = resp?.ok ? "No downloads yet." : "Connect Zavyx to see your downloads.";
+  $("downloads-empty").textContent = resp?.ok ? "No downloads yet." : "Connect Zavyx DM to see your downloads.";
   items.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
   for (const item of items.slice(0, 6)) {
     const li = document.createElement("li");

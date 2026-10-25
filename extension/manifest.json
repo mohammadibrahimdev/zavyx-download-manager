@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "Zavyx",
+  "name": "Zavyx DM",
   "version": "0.1.0",
   "description": "Send downloads and videos from your browser to Zavyx Download Manager.",
   "icons": {
@@ -57,7 +57,7 @@
   ],
   "browser_specific_settings": {
     "gecko": {
-      "id": "zavyx@mohammadibrahimdev.github.io",
+      "id": "zavyx-dm@mohammadibrahimdev.github.io",
       "strict_min_version": "109.0"
     }
   }

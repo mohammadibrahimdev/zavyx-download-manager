@@ -5275,7 +5275,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zavyx-cli"
+name = "zavyx-dm-cli"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5289,12 +5289,12 @@ dependencies = [
  "tracing-subscriber",
  "url",
  "uuid",
- "zavyx-core",
- "zavyx-native-messaging",
+ "zavyx-dm-core",
+ "zavyx-dm-native-messaging",
 ]
 
 [[package]]
-name = "zavyx-core"
+name = "zavyx-dm-core"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5320,7 +5320,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zavyx-ffmpeg"
+name = "zavyx-dm-ffmpeg"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5330,7 +5330,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zavyx-gui"
+name = "zavyx-dm-gui"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5345,12 +5345,12 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "winresource",
- "zavyx-core",
- "zavyx-native-messaging",
+ "zavyx-dm-core",
+ "zavyx-dm-native-messaging",
 ]
 
 [[package]]
-name = "zavyx-hls"
+name = "zavyx-dm-hls"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5363,7 +5363,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "zavyx-native-messaging"
+name = "zavyx-dm-native-messaging"
 version = "0.1.0"
 dependencies = [
  "anyhow",
@@ -5376,11 +5376,11 @@ dependencies = [
  "tracing",
  "url",
  "uuid",
- "zavyx-core",
+ "zavyx-dm-core",
 ]
 
 [[package]]
-name = "zavyx-ytdlp"
+name = "zavyx-dm-ytdlp"
 version = "0.1.0"
 dependencies = [
  "anyhow",
