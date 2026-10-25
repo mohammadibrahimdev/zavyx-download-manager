@@ -1,215 +1,231 @@
-// Popup logic: render media discovered on this tab + recent downloads, and
-// send URLs to the host.
+// Popup: connection status, "download this video" for video pages, a single
+// link box that routes to the right downloader, media found on the page, and
+// recent downloads from the Zavyx app.
 
-const versionEl = document.getElementById("version");
-const statusEl = document.getElementById("host-status");
-const manualUrlEl = document.getElementById("manual-url");
-const sendDirectBtn = document.getElementById("send-direct");
-const sendVideoBtn = document.getElementById("send-video");
-const sendHlsBtn = document.getElementById("send-hls");
-const discoveredCard = document.getElementById("discovered-card");
-const mediaListEl = document.getElementById("media-list");
-const mediaCountEl = document.getElementById("media-count");
-const downloadListEl = document.getElementById("download-list");
-const downloadsEmptyEl = document.getElementById("downloads-empty");
-const openOptionsEl = document.getElementById("open-options");
-const openHostAppEl = document.getElementById("open-host-app");
+const $ = (id) => document.getElementById(id);
+const statusEl = $("host-status");
 
-versionEl.textContent = "v" + (chrome.runtime.getManifest().version || "");
+$("version").textContent = "v" + chrome.runtime.getManifest().version;
 
-// --- Check host availability ---
-async function checkHost() {
+// Same list the background uses to decide what yt-dlp should handle.
+const VIDEO_SITES = [
+  "youtube.com", "youtu.be", "vimeo.com", "dailymotion.com", "twitch.tv",
+  "tiktok.com", "instagram.com", "twitter.com", "x.com", "facebook.com",
+  "fb.watch", "bilibili.com", "pinterest.com", "reddit.com", "soundcloud.com",
+];
+
+function isVideoSite(url) {
   try {
-    const resp = await chrome.runtime.sendMessage({ type: "ping_host" });
-    if (resp?.ok) {
-      setStatus("ok", "host connected");
-    } else {
-      setStatus("error", "host offline");
-    }
+    const h = new URL(url).hostname.toLowerCase();
+    return VIDEO_SITES.some((s) => h === s || h.endsWith("." + s));
   } catch {
-    setStatus("error", "host offline");
+    return false;
   }
 }
-function setStatus(state, text) {
-  statusEl.className = "status " + state;
-  statusEl.querySelector(".text").textContent = text;
+
+function isStream(url) {
+  return /\.(m3u8|mpd)(\?|#|$)/i.test(url);
 }
 
-// --- Render discovered media on this tab ---
+function toHost(payload) {
+  return chrome.runtime.sendMessage({ type: "popup_send_to_host", payload });
+}
+
+/** Run `action` from a button, showing ✓ / ✗ feedback on it. */
+async function withButton(btn, action) {
+  const label = btn.innerHTML;
+  btn.disabled = true;
+  let r;
+  try {
+    r = await action();
+  } catch (e) {
+    r = { ok: false, error: e.message };
+  }
+  btn.disabled = false;
+  btn.classList.add(r?.ok ? "done" : "failed");
+  btn.textContent = r?.ok ? "✓ Sent to Zavyx" : "✗ Failed";
+  if (!r?.ok) btn.title = r?.error || "";
+  setTimeout(() => {
+    btn.classList.remove("done", "failed");
+    btn.innerHTML = label;
+  }, 1600);
+  if (r?.ok) renderDownloads();
+  return r;
+}
+
+// --- Connection status ---
+async function checkHost() {
+  let resp;
+  try {
+    resp = await chrome.runtime.sendMessage({ type: "ping_host" });
+  } catch {}
+  const ok = !!resp?.ok;
+  statusEl.className = "status " + (ok ? "ok" : "error");
+  statusEl.querySelector(".text").textContent = ok ? "Connected" : "Not connected";
+  statusEl.title = ok ? "" : resp?.error || "";
+  $("offline-notice").hidden = ok;
+}
+
+// --- Current tab: offer "download this video" on video sites ---
+let currentTab = null;
+async function renderTab() {
+  [currentTab] = await chrome.tabs.query({ active: true, currentWindow: true });
+  if (!currentTab?.url || !isVideoSite(currentTab.url)) return;
+  $("video-card").hidden = false;
+  $("video-title").textContent = currentTab.title || "This video";
+  $("video-title").title = currentTab.title || "";
+}
+
+$("download-video").onclick = () =>
+  withButton($("download-video"), () =>
+    toHost({
+      type: "add_video",
+      url: currentTab.url,
+      page_url: currentTab.url,
+      kind: "page",
+      format: $("video-quality").value || undefined,
+    })
+  );
+
+// --- Link box ---
+function routeFor(url) {
+  if (isVideoSite(url)) return { type: "add_video", kind: "page", label: "Video page — saved with the best quality" };
+  if (isStream(url)) return { type: "add_hls", label: "Stream — saved as .mp4" };
+  return { type: "add_download", label: "File — multi-connection download" };
+}
+
+$("manual-url").addEventListener("input", () => {
+  const url = $("manual-url").value.trim();
+  const hint = $("url-hint");
+  hint.classList.remove("error");
+  hint.textContent = /^https?:\/\//i.test(url) ? routeFor(url).label : "";
+});
+
+$("send-url").onclick = async () => {
+  const url = $("manual-url").value.trim();
+  if (!/^https?:\/\//i.test(url)) {
+    $("url-hint").textContent = "Enter a link that starts with http:// or https://";
+    $("url-hint").classList.add("error");
+    return;
+  }
+  const { type, kind } = routeFor(url);
+  const r = await withButton($("send-url"), () => toHost({ type, url, kind, page_url: currentTab?.url }));
+  if (r?.ok) {
+    $("manual-url").value = "";
+    $("url-hint").textContent = "";
+  }
+};
+
+$("manual-url").addEventListener("keydown", (e) => {
+  if (e.key === "Enter") $("send-url").click();
+});
+
+// --- Media found on this page ---
+function nameFromUrl(url) {
+  try {
+    const u = new URL(url);
+    const last = decodeURIComponent(u.pathname.split("/").filter(Boolean).pop() || "");
+    return last || u.hostname;
+  } catch {
+    return url;
+  }
+}
+
 async function renderMedia() {
   const resp = await chrome.runtime.sendMessage({ type: "popup_get_tab_media" });
   const items = resp?.items || [];
-  if (items.length === 0) {
-    discoveredCard.hidden = true;
-    return;
-  }
-  discoveredCard.hidden = false;
-  mediaCountEl.textContent = items.length;
-  mediaListEl.innerHTML = "";
-  items.forEach((item) => {
+  $("media-card").hidden = items.length === 0;
+  $("media-count").textContent = items.length;
+  const list = $("media-list");
+  list.replaceChildren();
+  for (const item of items) {
     const li = document.createElement("li");
     const kind = document.createElement("span");
     kind.className = "kind";
-    kind.textContent = item.kind || "?";
-    const url = document.createElement("span");
-    url.className = "url";
-    url.textContent = item.url;
-    url.title = item.url;
+    kind.textContent = item.kind === "hls" || item.kind === "dash" ? "stream" : item.kind || "media";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = nameFromUrl(item.url);
+    name.title = item.url;
     const btn = document.createElement("button");
-    btn.textContent = "Send";
-    btn.onclick = async () => {
-      const msgType = item.kind === "hls" || item.kind === "dash"
-        ? "add_hls"
-        : "add_video";
-      btn.disabled = true;
-      const r = await chrome.runtime.sendMessage({
-        type: "popup_send_to_host",
-        payload: { type: msgType, url: item.url, page_url: item.pageUrl },
-      });
-      btn.disabled = false;
-      if (!r?.ok) {
-        btn.textContent = "✗";
-        setTimeout(() => (btn.textContent = "Send"), 1200);
-      } else {
-        btn.textContent = "✓";
-        setTimeout(() => (btn.textContent = "Send"), 1200);
-        renderDownloads();
-      }
-    };
-    li.appendChild(kind);
-    li.appendChild(url);
-    li.appendChild(btn);
-    mediaListEl.appendChild(li);
-  });
+    btn.textContent = "Download";
+    btn.onclick = () =>
+      withButton(btn, () =>
+        toHost(
+          item.kind === "hls" || item.kind === "dash"
+            ? { type: "add_hls", url: item.url, page_url: item.pageUrl }
+            : { type: "add_download", url: item.url, referer: item.pageUrl }
+        )
+      );
+    li.append(kind, name, btn);
+    list.appendChild(li);
+  }
 }
 
-// --- Render recent downloads from the host ---
+// --- Recent downloads from the app ---
+function humanBytes(n) {
+  if (!n) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(units.length - 1, Math.floor(Math.log(n) / Math.log(1024)));
+  return (n / 1024 ** i).toFixed(i ? 1 : 0) + " " + units[i];
+}
+
 async function renderDownloads() {
   let resp;
   try {
-    resp = await chrome.runtime.sendMessage({
-      type: "popup_send_to_host",
-      payload: { type: "list_downloads" },
-    });
-  } catch {
-    downloadsEmptyEl.hidden = false;
-    downloadsEmptyEl.textContent = "Host offline.";
-    downloadListEl.innerHTML = "";
-    return;
-  }
-  if (!resp?.ok) {
-    downloadsEmptyEl.hidden = false;
-    downloadsEmptyEl.textContent = "Host offline.";
-    downloadListEl.innerHTML = "";
-    return;
-  }
-  const items = resp.response?.items || [];
-  if (items.length === 0) {
-    downloadsEmptyEl.hidden = false;
-    downloadListEl.innerHTML = "";
-    return;
-  }
-  downloadsEmptyEl.hidden = true;
-  downloadListEl.innerHTML = "";
-  // Show most recent first.
+    resp = await toHost({ type: "list_downloads" });
+  } catch {}
+  const items = resp?.ok ? resp.response?.items || [] : [];
+  const list = $("download-list");
+  list.replaceChildren();
+  $("downloads-empty").hidden = items.length > 0;
+  $("downloads-empty").textContent = resp?.ok ? "No downloads yet." : "Connect Zavyx to see your downloads.";
   items.sort((a, b) => (b.created_at || "").localeCompare(a.created_at || ""));
-  for (const item of items.slice(0, 10)) {
+  for (const item of items.slice(0, 6)) {
     const li = document.createElement("li");
-    const filename = document.createElement("span");
-    filename.className = "filename";
-    filename.textContent = item.filename || item.url.split("/").pop() || "?";
-    filename.title = item.url;
+    const dl = document.createElement("div");
+    dl.className = "dl";
+    const name = document.createElement("span");
+    name.className = "name";
+    name.textContent = item.filename || nameFromUrl(item.url);
+    name.title = item.url;
+    dl.appendChild(name);
     const state = document.createElement("span");
-    state.className = "state " + (item.state || "");
-    state.textContent = item.state || "?";
-    const progress = document.createElement("span");
-    progress.className = "progress";
-    if (item.total) {
-      const pct = ((item.written / item.total) * 100).toFixed(1) + "%";
-      progress.textContent = pct;
+    state.className = "state " + item.state;
+    if (item.state === "downloading" && item.total) {
+      const pct = Math.min(100, (item.written / item.total) * 100);
+      const bar = document.createElement("div");
+      bar.className = "bar";
+      const fill = document.createElement("span");
+      fill.style.width = pct.toFixed(1) + "%";
+      bar.appendChild(fill);
+      dl.appendChild(bar);
+      state.textContent = pct.toFixed(0) + "%";
+    } else if (item.state === "completed") {
+      state.textContent = "✓ " + humanBytes(item.total || item.written);
     } else {
-      progress.textContent = humanBytes(item.written || 0);
+      state.textContent = item.state;
     }
-    li.appendChild(filename);
-    li.appendChild(state);
-    li.appendChild(progress);
-    downloadListEl.appendChild(li);
+    li.append(dl, state);
+    list.appendChild(li);
   }
 }
 
-function humanBytes(n) {
-  if (n < 1024) return n + " B";
-  if (n < 1024 * 1024) return (n / 1024).toFixed(1) + " KB";
-  if (n < 1024 * 1024 * 1024) return (n / (1024 * 1024)).toFixed(1) + " MB";
-  return (n / (1024 * 1024 * 1024)).toFixed(2) + " GB";
-}
-
-// --- Wire up the buttons ---
-sendDirectBtn.onclick = async () => {
-  const url = manualUrlEl.value.trim();
-  if (!url) return;
-  sendDirectBtn.disabled = true;
-  const r = await chrome.runtime.sendMessage({
-    type: "popup_send_to_host",
-    payload: { type: "add_download", url },
-  });
-  sendDirectBtn.disabled = false;
-  if (r?.ok) {
-    manualUrlEl.value = "";
-    renderDownloads();
-  } else {
-    alert("Failed: " + (r?.error || "unknown"));
-  }
-};
-sendVideoBtn.onclick = async () => {
-  const url = manualUrlEl.value.trim();
-  if (!url) return;
-  const r = await chrome.runtime.sendMessage({
-    type: "popup_send_to_host",
-    payload: { type: "add_video", url, page_url: undefined },
-  });
-  if (r?.ok) {
-    manualUrlEl.value = "";
-    renderDownloads();
-  } else {
-    alert("Failed: " + (r?.error || "unknown"));
-  }
-};
-sendHlsBtn.onclick = async () => {
-  const url = manualUrlEl.value.trim();
-  if (!url) return;
-  const r = await chrome.runtime.sendMessage({
-    type: "popup_send_to_host",
-    payload: { type: "add_hls", url, page_url: undefined },
-  });
-  if (r?.ok) {
-    manualUrlEl.value = "";
-    renderDownloads();
-  } else {
-    alert("Failed: " + (r?.error || "unknown"));
-  }
-};
-openOptionsEl.onclick = (e) => {
+// --- Footer ---
+$("open-options").onclick = (e) => {
   e.preventDefault();
   chrome.runtime.openOptionsPage();
 };
-openHostAppEl.onclick = async (e) => {
+$("open-app").onclick = async (e) => {
   e.preventDefault();
-  // The host launches the app if needed and brings its window to the front.
-  await chrome.runtime.sendMessage({
-    type: "popup_send_to_host",
-    payload: { type: "show_window" },
-  });
+  await toHost({ type: "show_window" });
+  window.close();
 };
 
-manualUrlEl.addEventListener("keydown", (e) => {
-  if (e.key === "Enter") sendDirectBtn.click();
-});
-
 checkHost();
+renderTab();
 renderMedia();
 renderDownloads();
-// Refresh periodically while popup is open.
 setInterval(() => {
   renderMedia();
   renderDownloads();

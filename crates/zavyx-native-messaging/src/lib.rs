@@ -57,7 +57,10 @@ pub enum IncomingMessage {
         url: String,
         #[serde(default)]
         page_url: String,
-        kind: Option<String>, // "youtube", "vimeo", "twitter", "tiktok", "generic"
+        kind: Option<String>, // "youtube", "vimeo", "twitter", "tiktok", "generic", "page"
+        /// yt-dlp format selector (quality); `None` means best.
+        #[serde(default)]
+        format: Option<String>,
     },
     AddHls {
         url: String,
@@ -489,12 +492,12 @@ pub async fn handle_message(msg: IncomingMessage, queue: &Arc<Queue>) -> anyhow:
             let id = queue.add(job);
             Ok(OutgoingMessage::DownloadAdded { id: id.to_string() })
         }
-        IncomingMessage::AddVideo { url, page_url, kind } => {
+        IncomingMessage::AddVideo { url, page_url, kind, format } => {
             // Decide routing: known video site → yt-dlp, generic → direct.
             let cfg = queue.config();
             let is_known = is_known_video_site(&url) || kind.is_some();
             let origin = if cfg.auto_ytdlp && is_known {
-                DownloadOrigin::YtDlp { url: url.clone(), format: None }
+                DownloadOrigin::YtDlp { url: url.clone(), format: format.filter(|f| !f.is_empty()) }
             } else {
                 DownloadOrigin::HtmlVideo { url: url.clone(), page_url: page_url.clone() }
             };

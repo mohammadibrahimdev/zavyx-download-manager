@@ -1,133 +1,186 @@
-// Content script: injects a "Download this video" button overlay on every
-// <video> element on the page, and reports discovered <video> src URLs to the
-// background service worker.
+// Content script: shows a "Download" button over every <video> on the page
+// (with a quality menu), and reports plain <video src> URLs to the background
+// worker so the popup can list them.
 //
-// Behavior (mimics IDM's overlay):
-//   - On mouseover a <video>, fade in a small floating button at top-right
-//     of the video.
-//   - Button has Zavyx branding (a download arrow).
-//   - Click sends the video URL to the host via the background worker.
-//   - For blob: URLs (common on YouTube), we resolve the actual media URL
-//     via the background's media sniffer cache.
+//   - Hovering a video fades the button in at its top-right corner.
+//   - "Download" sends the video to Zavyx in the best quality; the ▾ arrow
+//     opens a menu with 1080p / 720p / 480p / audio only.
+//   - blob:/MediaSource players (YouTube etc.) hide the real stream, so the page
+//     URL is sent instead and yt-dlp resolves it.
 
 (function () {
   "use strict";
 
-  // Avoid running in subframes repeatedly.
-  if (window !== window.top && !window.__zavyx_injected) {
-    // OK to run in subframes too — many video sites embed players in iframes.
-  }
   if (window.__zavyx_injected) return;
   window.__zavyx_injected = true;
 
+  const QUALITIES = [
+    ["Best quality", ""],
+    ["1080p", "bv*[height<=1080]+ba/b[height<=1080]"],
+    ["720p", "bv*[height<=720]+ba/b[height<=720]"],
+    ["480p", "bv*[height<=480]+ba/b[height<=480]"],
+    ["Audio only", "bestaudio/best"],
+  ];
+
+
   /** @type {Map<HTMLVideoElement, HTMLDivElement>} */
   const overlays = new Map();
+  let hideTimer = null;
+
+  function videoSource(video) {
+    let url = video.currentSrc || video.src || video.querySelector("source")?.src;
+    if (!url || !/^https?:/i.test(url)) return { url: location.href, kind: "page" };
+    return { url, kind: undefined };
+  }
+
+  function send(video, overlay, format) {
+    const { url, kind } = videoSource(video);
+    const label = overlay.querySelector(".zavyx-label");
+    overlay.classList.remove("zavyx-menu-open");
+    label.textContent = "Sending…";
+    chrome.runtime
+      .sendMessage({ type: "content_video_click", url, kind, format: format || undefined })
+      .then((r) => {
+        overlay.classList.add(r?.ok ? "zavyx-ok" : "zavyx-fail");
+        label.textContent = r?.ok ? "Added to Zavyx" : "Zavyx not connected";
+      })
+      .catch(() => {
+        overlay.classList.add("zavyx-fail");
+        label.textContent = "Zavyx not connected";
+      })
+      .finally(() => {
+        setTimeout(() => {
+          overlay.classList.remove("zavyx-ok", "zavyx-fail");
+          label.textContent = "Download";
+        }, 2200);
+      });
+  }
 
   function ensureOverlay(video) {
     if (overlays.has(video)) return overlays.get(video);
     const overlay = document.createElement("div");
     overlay.className = "zavyx-video-overlay";
     overlay.innerHTML = `
-      <div class="zavyx-vbtn" role="button" tabindex="0" title="Download with Zavyx">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M5 20h14v-2H5v2zm7-18l-5 5h3v6h4v-6h3l-5-5z"/>
-        </svg>
-        <span>Download</span>
+      <div class="zavyx-btn-group">
+        <button type="button" class="zavyx-main" title="Download with Zavyx">
+          <span class="zavyx-z">Z</span><span class="zavyx-label">Download</span>
+        </button>
+        <button type="button" class="zavyx-more" title="Choose quality" aria-haspopup="true">▾</button>
+      </div>
+      <div class="zavyx-menu" role="menu">
+        ${QUALITIES.map(([name, fmt]) => `<button type="button" role="menuitem" data-format="${fmt}">${name}</button>`).join("")}
       </div>`;
-    overlay.addEventListener("click", (e) => {
+    const stop = (e) => {
       e.preventDefault();
       e.stopPropagation();
-      let url = video.currentSrc || video.src;
-      if (!url) {
-        const source = video.querySelector("source");
-        url = source?.src;
-      }
-      // blob:/MediaSource players (YouTube etc.) hide the real stream, so hand
-      // the page URL to yt-dlp instead.
-      let kind;
-      if (!url || !/^https?:/i.test(url)) {
-        url = location.href;
-        kind = "page";
-      }
-      chrome.runtime.sendMessage({
-        type: "content_video_click",
-        url,
-        kind,
-      });
-      // Brief confirmation flash.
-      overlay.classList.add("zavyx-clicked");
-      setTimeout(() => overlay.classList.remove("zavyx-clicked"), 800);
+    };
+    overlay.addEventListener("mousedown", (e) => e.stopPropagation());
+    overlay.querySelector(".zavyx-main").addEventListener("click", (e) => {
+      stop(e);
+      send(video, overlay, "");
     });
-    // Attach to the document body so it floats above everything.
-    document.body.appendChild(overlay);
+    overlay.querySelector(".zavyx-more").addEventListener("click", (e) => {
+      stop(e);
+      overlay.classList.toggle("zavyx-menu-open");
+    });
+    overlay.querySelectorAll(".zavyx-menu button").forEach((b) =>
+      b.addEventListener("click", (e) => {
+        stop(e);
+        send(video, overlay, b.dataset.format);
+      })
+    );
+    overlay.addEventListener("mouseenter", () => clearTimeout(hideTimer));
+    overlay.addEventListener("mouseleave", () => scheduleHide(video));
+    document.documentElement.appendChild(overlay);
     overlays.set(video, overlay);
-    positionOverlay(video, overlay);
-    // Hide by default.
-    overlay.classList.remove("zavyx-visible");
     return overlay;
   }
 
   function positionOverlay(video, overlay) {
     const rect = video.getBoundingClientRect();
-    overlay.style.top = `${window.scrollY + rect.top + 8}px`;
-    overlay.style.left = `${window.scrollX + rect.right - overlay.offsetWidth - 8}px`;
+    if (rect.width < 160 || rect.height < 90) {
+      overlay.classList.remove("zavyx-visible");
+      return false;
+    }
+    const width = overlay.offsetWidth || 150;
+    overlay.style.top = `${window.scrollY + rect.top + 12}px`;
+    overlay.style.left = `${window.scrollX + rect.right - width - 12}px`;
+    return true;
   }
 
   function showOverlay(video) {
+    clearTimeout(hideTimer);
     const overlay = ensureOverlay(video);
-    positionOverlay(video, overlay);
-    overlay.classList.add("zavyx-visible");
+    overlays.forEach((o, v) => v !== video && o.classList.remove("zavyx-visible", "zavyx-menu-open"));
+    if (positionOverlay(video, overlay)) overlay.classList.add("zavyx-visible");
   }
 
-  function hideOverlay(video) {
-    const overlay = overlays.get(video);
-    if (overlay) overlay.classList.remove("zavyx-visible");
+  function scheduleHide(video) {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      const overlay = overlays.get(video);
+      if (overlay && !overlay.matches(":hover")) overlay.classList.remove("zavyx-visible", "zavyx-menu-open");
+    }, 1200);
   }
 
-  // Initial scan — find existing videos and report them.
+  // Report plain <video src> URLs so the popup can offer them.
   function scanVideos() {
-    const videos = document.querySelectorAll("video");
-    videos.forEach((v) => {
-      let url = v.currentSrc || v.src;
-      if (!url) {
-        const source = v.querySelector("source");
-        url = source?.src;
-      }
-      if (url && url.startsWith("http")) {
-        chrome.runtime.sendMessage({ type: "content_sniffed_video", url });
-      }
-      ensureOverlay(v);
+    document.querySelectorAll("video").forEach((v) => {
+      const { url, kind } = videoSource(v);
+      if (kind !== "page") chrome.runtime.sendMessage({ type: "content_sniffed_video", url }).catch(() => {});
     });
   }
 
-  // Mouse listeners on document (one handler per page, not per video).
-  document.addEventListener("mouseover", (e) => {
-    const v = e.target.closest("video");
-    if (v) showOverlay(v);
-  }, true);
-  document.addEventListener("mouseout", (e) => {
-    const v = e.target.closest("video");
-    if (v && !v.matches("video:hover")) hideOverlay(v);
-  }, true);
+  // Many players put controls on top of the <video>, so track the pointer
+  // position rather than relying on the video getting the hover itself.
+  let lastMove = 0;
+  document.addEventListener(
+    "mousemove",
+    (e) => {
+      const now = Date.now();
+      if (now - lastMove < 120) return;
+      lastMove = now;
+      for (const v of document.querySelectorAll("video")) {
+        const r = v.getBoundingClientRect();
+        if (e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom) {
+          showOverlay(v);
+          return;
+        }
+      }
+      overlays.forEach((_, v) => scheduleHide(v));
+    },
+    { passive: true, capture: true }
+  );
 
-  // Watch for new <video> elements via MutationObserver.
-  const observer = new MutationObserver((mutations) => {
-    for (const mut of mutations) {
-      mut.addedNodes.forEach((node) => {
-        if (node.nodeType !== 1) return;
-        if (node.tagName === "VIDEO") ensureOverlay(node);
-        else node.querySelectorAll?.("video").forEach(ensureOverlay);
+  const reposition = () =>
+    overlays.forEach((overlay, video) => {
+      if (overlay.classList.contains("zavyx-visible")) positionOverlay(video, overlay);
+    });
+  window.addEventListener("resize", reposition);
+  let scrollRaf = null;
+  window.addEventListener(
+    "scroll",
+    () => {
+      if (scrollRaf) return;
+      scrollRaf = requestAnimationFrame(() => {
+        scrollRaf = null;
+        reposition();
       });
-    }
-  });
-  observer.observe(document.documentElement || document.body, {
-    childList: true,
-    subtree: true,
-  });
+    },
+    { passive: true }
+  );
 
-  // Initial scan after a short delay (videos added after DOM ready).
+  // Drop overlays whose video left the page (SPA navigation).
+  setInterval(() => {
+    overlays.forEach((overlay, video) => {
+      if (!video.isConnected) {
+        overlay.remove();
+        overlays.delete(video);
+      }
+    });
+  }, 3000);
+
   setTimeout(scanVideos, 800);
-  // Re-scan on YouTube-style SPA navigation.
   let lastUrl = location.href;
   setInterval(() => {
     if (location.href !== lastUrl) {
@@ -135,17 +188,4 @@
       setTimeout(scanVideos, 1200);
     }
   }, 1500);
-
-  // Reposition overlays on resize/scroll.
-  window.addEventListener("resize", () => {
-    overlays.forEach((overlay, video) => positionOverlay(video, overlay));
-  });
-  let scrollRaf = null;
-  window.addEventListener("scroll", () => {
-    if (scrollRaf) return;
-    scrollRaf = requestAnimationFrame(() => {
-      scrollRaf = null;
-      overlays.forEach((overlay, video) => positionOverlay(video, overlay));
-    });
-  }, { passive: true });
 })();

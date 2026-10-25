@@ -1,66 +1,101 @@
-/* Zavyx video overlay button — dark, minimal, IDM-style. */
+/* Zavyx "Download" button shown over videos. Every rule is scoped and uses
+   !important where sites commonly restyle buttons. */
 
 .zavyx-video-overlay {
-  position: absolute;
-  z-index: 2147483647;
-  pointer-events: none;
+  position: absolute !important;
+  z-index: 2147483647 !important;
   opacity: 0;
-  transition: opacity 0.18s ease;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  font-size: 12px;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  font: 600 13px/1 "Segoe UI", system-ui, -apple-system, sans-serif !important;
+  letter-spacing: normal !important;
 }
 
 .zavyx-video-overlay.zavyx-visible {
   opacity: 1;
   pointer-events: auto;
+  transform: none;
 }
 
-.zavyx-vbtn {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  background: rgba(20, 24, 30, 0.92);
-  color: #f5f5f5;
-  padding: 6px 10px;
-  border-radius: 6px;
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+.zavyx-btn-group {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(40, 20, 120, 0.45);
+}
+
+.zavyx-video-overlay button {
+  all: unset;
+  box-sizing: border-box;
   cursor: pointer;
-  user-select: none;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  font-weight: 600;
-  letter-spacing: 0.02em;
-  transition: background 0.12s ease, transform 0.12s ease;
+  color: #fff !important;
+  font: inherit !important;
 }
 
-.zavyx-vbtn:hover {
-  background: rgba(40, 96, 220, 0.96);
-  transform: translateY(-1px);
+.zavyx-main {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 8px !important;
+  background: linear-gradient(180deg, #8b6cff, #5b34e6) !important;
 }
 
-.zavyx-vbtn:active {
-  transform: translateY(0);
-  background: rgba(30, 80, 200, 1);
+.zavyx-more {
+  padding: 8px 10px !important;
+  background: #5b34e6 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
 }
 
-.zavyx-vbtn svg {
+.zavyx-main:hover,
+.zavyx-more:hover {
+  filter: brightness(1.12);
+}
+
+.zavyx-z {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  color: #5b34e6;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.zavyx-video-overlay.zavyx-ok .zavyx-main,
+.zavyx-video-overlay.zavyx-ok .zavyx-more {
+  background: #22a05a !important;
+}
+
+.zavyx-video-overlay.zavyx-fail .zavyx-main,
+.zavyx-video-overlay.zavyx-fail .zavyx-more {
+  background: #d23c3c !important;
+}
+
+.zavyx-menu {
+  display: none;
+  margin-top: 6px;
+  min-width: 100%;
+  padding: 4px;
+  border-radius: 10px;
+  background: #1e1c28;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.zavyx-video-overlay.zavyx-menu-open .zavyx-menu {
   display: block;
 }
 
-.zavyx-vbtn:focus-visible {
-  outline: 2px solid #6ea8ff;
-  outline-offset: 2px;
+.zavyx-menu button {
+  display: block !important;
+  width: 100%;
+  padding: 8px 10px !important;
+  border-radius: 6px;
+  font-weight: 500 !important;
 }
 
-/* Confirmation flash on click */
-.zavyx-video-overlay.zavyx-clicked .zavyx-vbtn {
-  background: rgba(46, 160, 67, 0.96);
-  animation: zavyx-flash 0.6s ease;
-}
-
-@keyframes zavyx-flash {
-  0%   { transform: scale(1); }
-  35%  { transform: scale(1.08); }
-  100% { transform: scale(1); }
+.zavyx-menu button:hover {
+  background: #6d4aff !important;
 }

@@ -8,43 +8,68 @@
 </head>
 <body>
   <header class="header">
+    <img class="logo" src="../icons/icon48.png" alt="" />
     <div class="brand">
-      <span class="logo">Zavyx</span>
-      <span class="version" id="version"></span>
+      <span class="name">Zavyx</span>
+      <span class="sub">Download Manager</span>
     </div>
-    <div class="status" id="host-status">
-      <span class="dot"></span><span class="text">checking…</span>
+    <div class="status" id="host-status" title="">
+      <span class="dot"></span><span class="text">Connecting…</span>
     </div>
   </header>
 
-  <section class="card">
-    <h2>Send URL to host</h2>
+  <section class="notice" id="offline-notice" hidden>
+    <strong>Zavyx app not found.</strong>
+    Install Zavyx (or run <code>Connect browsers.bat</code> from the portable version), then reopen this popup.
+    <a href="https://github.com/mohammadibrahimdev/zavyx/releases/latest" target="_blank">Get Zavyx</a>
+  </section>
+
+  <section class="card hero" id="video-card" hidden>
+    <div class="hero-title" id="video-title">This video</div>
     <div class="row">
-      <input type="text" id="manual-url" placeholder="https://example.com/file.zip" />
+      <select id="video-quality" aria-label="Quality">
+        <option value="">Best quality</option>
+        <option value="bv*[height<=1080]+ba/b[height<=1080]">1080p</option>
+        <option value="bv*[height<=720]+ba/b[height<=720]">720p</option>
+        <option value="bv*[height<=480]+ba/b[height<=480]">480p</option>
+        <option value="bestaudio/best">Audio only</option>
+      </select>
+      <button id="download-video" class="primary grow">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path fill="currentColor" d="M12 3v10.17l3.59-3.58L17 11l-5 5-5-5 1.41-1.41L11 13.17V3h1zM5 19h14v2H5z"/></svg>
+        Download this video
+      </button>
     </div>
-    <div class="actions">
-      <button id="send-direct" class="primary">Download</button>
-      <button id="send-video">As Video (yt-dlp)</button>
-      <button id="send-hls">As HLS (ffmpeg)</button>
-    </div>
-  </section>
-
-  <section class="card" id="discovered-card" hidden>
-    <h2>Media on this tab <span class="count" id="media-count">0</span></h2>
-    <ul id="media-list" class="media-list"></ul>
   </section>
 
   <section class="card">
-    <h2>Recent downloads</h2>
-    <ul id="download-list" class="download-list"></ul>
+    <label class="label" for="manual-url">Download a link</label>
+    <div class="row">
+      <input type="url" id="manual-url" placeholder="Paste any link — file, video page or stream" />
+      <button id="send-url" class="primary">Download</button>
+    </div>
+    <div class="hint" id="url-hint"></div>
+  </section>
+
+  <section class="card" id="media-card" hidden>
+    <div class="label">Found on this page <span class="count" id="media-count">0</span></div>
+    <ul id="media-list" class="list"></ul>
+  </section>
+
+  <section class="card">
+    <div class="label">Recent downloads</div>
+    <ul id="download-list" class="list"></ul>
     <p class="empty" id="downloads-empty">No downloads yet.</p>
   </section>
 
   <footer class="footer">
-    <a href="#" id="open-options">Options</a>
-    <a href="#" id="open-host-app">Open Zavyx app</a>
+    <a href="#" id="open-app">Open Zavyx</a>
+    <span class="sep">·</span>
+    <a href="#" id="open-options">Settings</a>
+    <span class="sep">·</span>
+    <a href="https://github.com/mohammadibrahimdev/zavyx" target="_blank" id="version">v</a>
   </footer>
 
+  <script src="../src/browser-shim.js"></script>
   <script src="./popup.js"></script>
 </body>
 </html>

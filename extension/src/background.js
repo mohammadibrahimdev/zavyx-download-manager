@@ -22,16 +22,12 @@ function connectNative() {
     port = chrome.runtime.connectNative(HOST_NAME);
     port.onMessage.addListener(onNativeMessage);
     port.onDisconnect.addListener(() => {
-      console.warn("[Zavyx] Native port disconnected:", port?.error || "no error");
+      const reason = chrome.runtime.lastError?.message || "Zavyx is not installed or could not start";
+      console.warn("[Zavyx] Native port disconnected:", reason);
       port = null;
       portConnecting = false;
-      // Reject all pending handlers.
-      for (const [, reject] of messageHandlers) {
-        try { reject(new Error("Native port disconnected")); } catch {}
-      }
-      messageHandlers.clear();
-      // Reconnect after a short delay. Browsers will silently drop disconnected
-      // ports; we want the host to come back when the user starts the app.
+      failPending(reason);
+      // Reconnect after a short delay so the link comes back once Zavyx is installed/fixed.
       setTimeout(connectNative, 5000);
     });
     // Flush pending messages.
@@ -43,7 +39,17 @@ function connectNative() {
     console.error("[Zavyx] Failed to connect to native host:", e);
     port = null;
     portConnecting = false;
+    failPending(String(e?.message || e));
   }
+}
+
+// Reject every request still waiting for the host, so callers don't hang.
+function failPending(reason) {
+  pendingMessages = [];
+  for (const { reject } of messageHandlers.values()) {
+    reject(new Error(reason));
+  }
+  messageHandlers.clear();
 }
 
 function sendToHost(message) {
@@ -51,6 +57,8 @@ function sendToHost(message) {
   return new Promise((resolve, reject) => {
     const seq = Math.random().toString(36).slice(2);
     const wrapped = { seq, ...message };
+    // Register before sending: a failed connect rejects pending handlers immediately.
+    messageHandlers.set(seq, { resolve, reject });
     if (!port) {
       pendingMessages.push(wrapped);
       connectNative();
@@ -63,7 +71,6 @@ function sendToHost(message) {
       }
     }
     // Wait up to 30s for a response with this seq.
-    messageHandlers.set(seq, { resolve, reject });
     setTimeout(() => {
       if (messageHandlers.has(seq)) {
         messageHandlers.delete(seq);
@@ -95,7 +102,20 @@ function onNativeMessage(msg) {
 // --- Per-tab discovered media cache ---
 const tabMedia = new Map(); // tabId -> [{ url, kind, mime, pageUrl, ts }]
 
+// Requests that look like media but aren't useful to download: site UI sounds,
+// and the small chunks streaming players fetch (the whole video is reachable via
+// the page URL or the playlist instead).
+function isNoise(url) {
+  return (
+    /youtube\.com\/s\//i.test(url) ||
+    /googlevideo\.com\/videoplayback/i.test(url) ||
+    /\.(ts|m4s|aac)(\?|#|$)/i.test(url) ||
+    /[?&](range|bytestart|sq)=/i.test(url)
+  );
+}
+
 function recordMedia(tabId, item) {
+  if (tabId == null || tabId < 0 || isNoise(item.url)) return;
   if (!tabMedia.has(tabId)) tabMedia.set(tabId, []);
   const list = tabMedia.get(tabId);
   // Dedupe by URL.
@@ -266,6 +286,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
         url: msg.url,
         page_url: sender.tab?.url,
         kind: msg.kind,
+        format: msg.format,
       }).then(
         (resp) => sendResponse({ ok: true, response: resp }),
         (err) => sendResponse({ ok: false, error: err.message })
