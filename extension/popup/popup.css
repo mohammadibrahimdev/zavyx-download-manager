@@ -70,6 +70,7 @@ body {
   font-size: 12px;
 }
 .notice a { display: inline-block; margin-top: 6px; color: var(--accent); font-weight: 600; }
+.notice .reason { display: block; margin-top: 6px; font-size: 11px; word-break: break-word; user-select: text; }
 @media (prefers-color-scheme: dark) {
   .notice { background: #3a1d22; color: #ffc9c9; border-color: #5a2a31; }
 }

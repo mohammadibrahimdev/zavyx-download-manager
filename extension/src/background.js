@@ -304,7 +304,14 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     case "ping_host":
       sendToHost({ type: "ping" }).then(
         (resp) => sendResponse({ ok: true, response: resp }),
-        (err) => sendResponse({ ok: false, error: err.message })
+        // A one-shot call reports the browser's exact reason (host not found,
+        // forbidden, exited...), which the long-lived port often doesn't.
+        (err) =>
+          chrome.runtime.sendNativeMessage(HOST_NAME, { type: "ping" }, (resp) => {
+            const reason = chrome.runtime.lastError?.message;
+            if (resp && !reason) sendResponse({ ok: true, response: resp });
+            else sendResponse({ ok: false, error: reason || err.message });
+          })
       );
       return true;
   }

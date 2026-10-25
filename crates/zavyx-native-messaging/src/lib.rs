@@ -203,7 +203,8 @@ impl Host {
         let read = self.reader.read_exact(&mut len_buf).await;
         match read {
             Ok(_) => {}
-            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof => return Ok(None),
+            // EOF or a closed pipe both mean the browser went away.
+            Err(e) if matches!(e.kind(), io::ErrorKind::UnexpectedEof | io::ErrorKind::BrokenPipe) => return Ok(None),
             Err(e) => return Err(NmError::Io(e)),
         }
         let len = u32::from_le_bytes(len_buf);

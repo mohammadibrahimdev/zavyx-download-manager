@@ -64,6 +64,7 @@ async function checkHost() {
   statusEl.querySelector(".text").textContent = ok ? "Connected" : "Not connected";
   statusEl.title = ok ? "" : resp?.error || "";
   $("offline-notice").hidden = ok;
+  $("offline-reason").textContent = ok ? "" : "Reason: " + (resp?.error || "no answer from the extension");
 }
 
 // --- Current tab: offer "download this video" on video sites ---
