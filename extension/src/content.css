@@ -1,0 +1,101 @@
+/* Zavyx DM "Download" button shown over videos. Every rule is scoped and uses
+   !important where sites commonly restyle buttons. */
+
+.zavyx-dm-video-overlay {
+  position: absolute !important;
+  z-index: 2147483647 !important;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  font: 600 13px/1 "Segoe UI", system-ui, -apple-system, sans-serif !important;
+  letter-spacing: normal !important;
+}
+
+.zavyx-dm-video-overlay.zavyx-dm-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+}
+
+.zavyx-dm-btn-group {
+  display: flex;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 6px 20px rgba(40, 20, 120, 0.45);
+}
+
+.zavyx-dm-video-overlay button {
+  all: unset;
+  box-sizing: border-box;
+  cursor: pointer;
+  color: #fff !important;
+  font: inherit !important;
+}
+
+.zavyx-dm-main {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px 8px 8px !important;
+  background: linear-gradient(180deg, #8b6cff, #5b34e6) !important;
+}
+
+.zavyx-dm-more {
+  padding: 8px 10px !important;
+  background: #5b34e6 !important;
+  border-left: 1px solid rgba(255, 255, 255, 0.25) !important;
+}
+
+.zavyx-dm-main:hover,
+.zavyx-dm-more:hover {
+  filter: brightness(1.12);
+}
+
+.zavyx-dm-z {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  background: #fff;
+  color: #5b34e6;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.zavyx-dm-video-overlay.zavyx-dm-ok .zavyx-dm-main,
+.zavyx-dm-video-overlay.zavyx-dm-ok .zavyx-dm-more {
+  background: #22a05a !important;
+}
+
+.zavyx-dm-video-overlay.zavyx-dm-fail .zavyx-dm-main,
+.zavyx-dm-video-overlay.zavyx-dm-fail .zavyx-dm-more {
+  background: #d23c3c !important;
+}
+
+.zavyx-dm-menu {
+  display: none;
+  margin-top: 6px;
+  min-width: 100%;
+  padding: 4px;
+  border-radius: 10px;
+  background: #1e1c28;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+
+.zavyx-dm-video-overlay.zavyx-dm-menu-open .zavyx-dm-menu {
+  display: block;
+}
+
+.zavyx-dm-menu button {
+  display: block !important;
+  width: 100%;
+  padding: 8px 10px !important;
+  border-radius: 6px;
+  font-weight: 500 !important;
+}
+
+.zavyx-dm-menu button:hover {
+  background: #6d4aff !important;
+}

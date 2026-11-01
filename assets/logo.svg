@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#8b6cff"/>
+      <stop offset="1" stop-color="#5b34e6"/>
+    </linearGradient>
+  </defs>
+  <rect width="256" height="256" rx="56" fill="url(#g)"/>
+  <polygon fill="#fff" points="83.0,34.0 173.0,34.0 173.0,58.1 115.3,101.9 173.0,101.9 173.0,126.0 83.0,126.0 83.0,101.9 140.7,58.1 83.0,58.1"/>
+  <g fill="#fff" font-family="'Segoe UI Black','Arial Black',sans-serif" font-weight="900" font-size="31" text-anchor="middle">
+    <text x="128" y="177">DOWNLOAD</text>
+    <text x="128" y="215">MANAGER</text>
+  </g>
+</svg>

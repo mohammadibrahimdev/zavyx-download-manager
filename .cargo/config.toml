@@ -1,0 +1,4 @@
+# Build the C runtime into the .exe so the app starts on PCs that don't have
+# the Microsoft Visual C++ Redistributable installed (no admin needed).
+[target.'cfg(all(windows, target_env = "msvc"))']
+rustflags = ["-C", "target-feature=+crt-static"]
