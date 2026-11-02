@@ -1177,7 +1177,7 @@ impl ZavyxDmApp {
                 ui.hyperlink_to("github.com/mohammadibrahimdev", GITHUB_PROFILE);
                 ui.add_space(6.0);
                 ui.hyperlink_to("Source code & releases", REPO_URL);
-                ui.label(RichText::new("Freeware · not for sale").weak());
+                ui.label(RichText::new("Free & open source (MIT / Apache-2.0)").weak());
             });
         });
         if !open {

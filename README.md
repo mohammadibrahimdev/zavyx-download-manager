@@ -13,7 +13,7 @@
 
 <p align="center">
   <a href="https://github.com/mohammadibrahimdev/zavyx-download-manager/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/mohammadibrahimdev/zavyx-download-manager?label=download&color=6d4aff"></a>
-  <a href="LICENSE"><img alt="Freeware" src="https://img.shields.io/badge/license-freeware-6d4aff"></a>
+  <a href="LICENSE-MIT"><img alt="MIT OR Apache-2.0" src="https://img.shields.io/badge/license-MIT%20OR%20Apache--2.0-6d4aff"></a>
   <img alt="Windows 10/11" src="https://img.shields.io/badge/Windows-10%20%7C%2011-6d4aff">
 </p>
 
@@ -106,7 +106,9 @@ Zavyx DM is part of **[Zavyx](https://github.com/mohammadibrahimdev/zavyx)** —
 
 ## 📄 License
 
-Free to download and use, for personal or business work. The source code is public so you can read it and build it for yourself, but it is **not open source**: selling it, re-branding it or redistributing it is not allowed. See [LICENSE](LICENSE) (Zavyx Freeware License) © Mohammad Ibrahim.
+Free and open source under the [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) license, at your option. © 2026 Mohammad Ibrahim.
+
+The Zavyx name and logo are not covered by the licence: a modified version must use its own name and icon.
 
 Bundled third-party tools (yt-dlp, FFmpeg) keep their own licences — see [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md).
 

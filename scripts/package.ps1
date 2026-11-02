@@ -61,7 +61,7 @@ foreach ($tool in "yt-dlp.exe", "ffmpeg.exe") {
 
 # Browser extension, licences, and the helper for portable users.
 Copy-Item -Recurse extension "$staging\extension"
-Copy-Item LICENSE, THIRD-PARTY-NOTICES.md $staging
+Copy-Item LICENSE-MIT, LICENSE-APACHE, THIRD-PARTY-NOTICES.md $staging
 Copy-Item installer\register-nm-host.ps1, installer\unregister-nm-host.bat $staging
 Set-Content -Encoding ASCII "$staging\Connect browsers.bat" @'
 @echo off

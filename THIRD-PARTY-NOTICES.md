@@ -14,5 +14,5 @@ them as external tools; they keep their own licences.
 - Licence: GNU GPL v3 — https://www.gnu.org/licenses/gpl-3.0.html
 - Source code: https://ffmpeg.org/download.html and https://github.com/GyanD/codexffmpeg
 
-Zavyx DM itself is freeware under the Zavyx Freeware License (see `LICENSE`). Rust crate
+Zavyx DM itself is open source under MIT OR Apache-2.0 (see `LICENSE-MIT`, `LICENSE-APACHE`). Rust crate
 dependencies are listed in `Cargo.lock` with their own licences.

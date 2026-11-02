@@ -14,7 +14,7 @@ members = [
 version = "0.2.1"
 edition = "2021"
 authors = ["Mohammad Ibrahim <https://github.com/mohammadibrahimdev>"]
-license = "LicenseRef-Zavyx-Freeware"
+license = "MIT OR Apache-2.0"
 repository = "https://github.com/mohammadibrahimdev/zavyx-download-manager"
 description = "Zavyx Download Manager: fast, free download manager for Windows"
 
